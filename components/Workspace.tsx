@@ -14,7 +14,7 @@ import ParcelList from "@/components/parcels/ParcelList";
 import NeedsCheckList from "@/components/parcels/NeedsCheckList";
 import RouteSettingsForm, { type OriginState } from "@/components/settings/RouteSettingsForm";
 import { geocodeAddresses, GeocodeRequestError } from "@/lib/client/geocode";
-import { applyRetryResults, buildParcels, isInKorea, setManualLocation } from "@/lib/core/parcels";
+import { applyRetryResults, buildParcels, isInKorea, removeParcels, setManualLocation } from "@/lib/core/parcels";
 import { BLOCKED_MESSAGES, selectFirst, toggleSelection } from "@/lib/core/selection";
 import { legPoints, moveInOrder, planRoute, repricePlan, reorderPlan, roadEndOverrides, routeDrawing, routePoints, splitPlanByDay, addDaysToDate, type LegActual, type RoutePlan, type Timetable } from "@/lib/core/route";
 import { fetchCarMatrix, MatrixRequestError } from "@/lib/client/matrix";
@@ -374,6 +374,22 @@ export default function Workspace() {
     }
   }
 
+  // 붙여넣은 주소: 지금 목록은 그대로 두고 새 주소만 위치를 찾아 이어서 추가한다 (선택·조사 기록 유지)
+  async function addLocations(merged: MergedAddress[]) {
+    clearResult(); // 필지가 늘면 이전 결과는 더 이상 맞지 않는다
+    setLookup({ working: true, done: 0, total: merged.length, error: "" });
+    try {
+      const results = await geocodeAddresses(
+        merged.map((m) => m.address),
+        (done, total) => setLookup((l) => ({ ...l, done, total })),
+      );
+      setParcels((current) => [...current, ...buildParcels(merged, results)]);
+      setLookup({ working: false, done: merged.length, total: merged.length, error: "" });
+    } catch (e) {
+      handleError(e);
+    }
+  }
+
   // 일시 오류로 못 찾은 필지만 다시 찾는다 (이미 위치가 있는 필지는 건드리지 않음)
   async function retryFailed() {
     const failed = parcels.filter((p) => p.lookupFailed);
@@ -397,6 +413,22 @@ export default function Workspace() {
     const result = toggleSelection(selectedIds, id, parcels);
     setSelectedIds(result.selected);
     setSelectNotice(result.blocked ? BLOCKED_MESSAGES[result.blocked] : "");
+    clearResult();
+  }
+
+  // 선택한 필지를 목록에서 지운다 (그 필지의 조사 기록도 함께 지움). 되돌릴 수 없어 먼저 확인한다.
+  function handleDeleteSelected() {
+    if (pickingId || selectedIds.length === 0) return;
+    const ok = window.confirm(
+      `선택한 필지 ${selectedIds.length}곳을 목록에서 삭제할까요?
+입력한 조사 기록도 함께 지워지고, 되돌릴 수 없어요.`,
+    );
+    if (!ok) return;
+    const gone = new Set(selectedIds);
+    setParcels((current) => removeParcels(current, selectedIds));
+    setRecords((current) => Object.fromEntries(Object.entries(current).filter(([id]) => !gone.has(id))));
+    setSelectedIds([]);
+    setSelectNotice(`선택한 ${gone.size}곳을 목록에서 삭제했어요.`);
     clearResult();
   }
 
@@ -532,7 +564,13 @@ export default function Workspace() {
         <aside className="w-full overflow-y-auto p-4 pl-6 md:w-[26rem]">
           <section aria-labelledby="sec-upload" className="mb-6">
             <h2 id="sec-upload" className="mb-2 font-semibold">① 목록 올리기</h2>
-            <UploadPanel onLoaded={findLocations} disabled={lookup.working} />
+            <UploadPanel
+              onLoaded={findLocations}
+              onAdd={addLocations}
+              existingAddresses={parcels.map((p) => p.address)}
+              nextRow={parcels.reduce((max, p) => Math.max(max, ...p.rowNumbers), 0)}
+              disabled={lookup.working}
+            />
             {lookup.working && (
               <p className="mt-2 text-sm" aria-live="polite">
                 위치 찾는 중… {lookup.done}/{lookup.total}
@@ -552,6 +590,7 @@ export default function Workspace() {
               onToggle={handleToggle}
               onSelectAll={handleSelectAll}
               onClearSelection={handleClearSelection}
+              onDeleteSelected={handleDeleteSelected}
               onRepick={startPicking}
               pickingId={pickingId}
             />

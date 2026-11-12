@@ -8,6 +8,7 @@ export default function ParcelList({
   onToggle,
   onSelectAll,
   onClearSelection,
+  onDeleteSelected,
   onRepick,
   pickingId,
 }: {
@@ -17,6 +18,8 @@ export default function ParcelList({
   onToggle: (id: string) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
+  /** 선택한 필지를 목록에서 삭제 (확인은 부르는 쪽에서) */
+  onDeleteSelected: () => void;
   onRepick: (id: string) => void;
   pickingId: string | null;
 }) {
@@ -42,6 +45,14 @@ export default function ParcelList({
           </button>
           <button type="button" onClick={onClearSelection} disabled={selectedIds.length === 0} className="rounded border border-zinc-400 px-2 py-0.5 disabled:opacity-50">
             선택 해제
+          </button>
+          <button
+            type="button"
+            onClick={onDeleteSelected}
+            disabled={selectedIds.length === 0 || pickingId !== null}
+            className="rounded border border-red-400 px-2 py-0.5 text-red-700 disabled:opacity-50 dark:text-red-400"
+          >
+            선택 삭제
           </button>
         </div>
       </div>

@@ -126,3 +126,16 @@ describe("geocodeAddresses — 서버에 100건씩 나눠 요청", () => {
     await expect(geocodeAddresses(["A"], undefined, f)).rejects.toBeInstanceOf(GeocodeRequestError);
   });
 });
+
+import { removeParcels } from "@/lib/core/parcels";
+
+describe("필지 삭제", () => {
+  const p = (id: string) => ({ id, address: id, rowNumbers: [1], needsCheck: false });
+  it("지정한 필지만 빼고 순서는 그대로 둔다", () => {
+    expect(removeParcels([p("a"), p("b"), p("c")], ["b"]).map((x) => x.id)).toEqual(["a", "c"]);
+  });
+  it("없는 id나 빈 목록이면 그대로", () => {
+    expect(removeParcels([p("a")], ["zz"])).toHaveLength(1);
+    expect(removeParcels([p("a")], [])).toHaveLength(1);
+  });
+});

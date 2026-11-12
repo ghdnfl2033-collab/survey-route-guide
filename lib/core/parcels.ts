@@ -28,6 +28,12 @@ export function applyRetryResults(parcels: readonly Parcel[], results: readonly 
   });
 }
 
+/** 지정한 필지들을 목록에서 뺀다 (나머지 필지의 순서는 그대로). */
+export function removeParcels(parcels: readonly Parcel[], ids: readonly string[]): Parcel[] {
+  const gone = new Set(ids);
+  return parcels.filter((p) => !gone.has(p.id));
+}
+
 export const hasLocation = (p: Parcel) => !!p.coord;
 
 /** 대한민국 안(제주·울릉·독도 포함)의 대략적인 범위. 엉뚱한 곳을 찍는 실수를 막는 데 쓴다. */

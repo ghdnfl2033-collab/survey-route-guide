@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { readParcelFile, type ExcelReadResult } from "@/lib/client/excel";
 import { mergeDuplicateAddresses, type MergeResult, type MergedAddress } from "@/lib/core/address";
+import { MAX_PASTE_LINES, parsePastedText } from "@/lib/core/pasteText";
+
+const PASTE_PLACEHOLDER = ["한 줄에 지번 주소 하나씩", "예) 서울 종로구 청운동 1-1", "    서울 종로구 청운동 2-3"].join("\n");
 
 type Loaded = { read: Extract<ExcelReadResult, { ok: true }>; merged: MergeResult };
 
@@ -10,11 +13,45 @@ type Loaded = { read: Extract<ExcelReadResult, { ok: true }>; merged: MergeResul
 // 읽고 합친 주소 목록은 onLoaded로 넘기고, 위치 찾기는 작업 공간(Workspace)이 이어서 한다.
 export default function UploadPanel({
   onLoaded,
+  onAdd,
+  existingAddresses,
+  nextRow,
   disabled = false,
 }: {
   onLoaded: (addresses: MergedAddress[]) => void;
+  /** 붙여넣은 주소를 지금 목록에 추가한다 */
+  onAdd: (addresses: MergedAddress[]) => void;
+  /** 지금 목록에 있는 주소들 (붙여넣은 주소가 겹치면 건너뛴다) */
+  existingAddresses: readonly string[];
+  /** 새로 추가하는 주소에 붙일 원본 줄 번호의 시작 값 */
+  nextRow: number;
   disabled?: boolean;
 }) {
+  const [pasteText, setPasteText] = useState("");
+  const [pasteError, setPasteError] = useState("");
+  const [pasteInfo, setPasteInfo] = useState<string[]>([]);
+
+  function addPasted() {
+    const r = parsePastedText(pasteText, existingAddresses, nextRow);
+    if (!r.ok) {
+      setPasteError(r.message);
+      setPasteInfo([]);
+      return;
+    }
+    setPasteError("");
+    const info: string[] = [];
+    if (r.parcels.length > 0) info.push(`주소 ${r.parcels.length}곳을 추가했어요.`);
+    else info.push("새로 추가할 주소가 없어요.");
+    if (r.mergedCount > 0) info.push(`같은 주소가 겹쳐 ${r.mergedCount}건을 하나로 합쳤어요.`);
+    if (r.alreadyCount > 0) info.push(`이미 목록에 있는 ${r.alreadyCount}곳은 건너뛰었어요.`);
+    if (r.unreadableLines.length > 0) info.push(`${r.unreadableLines.join(", ")}번째 줄은 주소로 읽지 못했어요. (너무 긴 줄)`);
+    setPasteInfo(info);
+    if (r.parcels.length > 0) {
+      onAdd(r.parcels);
+      setPasteText("");
+    }
+  }
+
   const [error, setError] = useState("");
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [busy, setBusy] = useState(false);
@@ -55,6 +92,39 @@ export default function UploadPanel({
         ⓘ 첫 번째 시트의 첫 번째 열에 지번 주소만 적어 올려 주세요. 제목 행 없이 첫 줄부터 읽어요.
         이름·연락처 같은 개인정보는 엑셀에 넣지 마세요.
       </p>
+
+      <div className="space-y-1 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+        <label htmlFor="paste-addresses" className="text-sm font-medium">주소 직접 붙여넣기</label>
+        <textarea
+          id="paste-addresses"
+          value={pasteText}
+          onChange={(e) => setPasteText(e.target.value)}
+          rows={4}
+          disabled={disabled}
+          placeholder={PASTE_PLACEHOLDER}
+          className="w-full rounded border border-zinc-300 bg-transparent px-2 py-1.5 text-sm dark:border-zinc-600"
+        />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={addPasted}
+            disabled={disabled || pasteText.trim() === ""}
+            className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+          >
+            목록에 추가
+          </button>
+          <span className="text-xs text-zinc-500">최대 {MAX_PASTE_LINES}줄 · 지금 목록에 이어서 추가돼요</span>
+        </div>
+        <p className="text-xs text-zinc-500">엑셀에서 주소 칸을 복사해 붙여넣어도 돼요. 여러 열을 복사해도 첫 번째 열만 읽어요.</p>
+        {pasteError && <p role="alert" className="text-sm text-red-600">{pasteError}</p>}
+        {pasteInfo.length > 0 && (
+          <div className="space-y-0.5 text-sm" aria-live="polite">
+            {pasteInfo.map((line) => (
+              <p key={line} className="text-zinc-700 dark:text-zinc-300">{line}</p>
+            ))}
+          </div>
+        )}
+      </div>
 
       {busy && <p className="text-sm">읽는 중…</p>}
 
