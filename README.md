@@ -4,6 +4,11 @@
 
 방문 순서를 개인의 감에 맡기던 일을 줄여, 계획 수립 시간(약 30분 → 5분 이내)과 하루 이동 거리를 줄이는 것이 목표입니다.
 
+## 배포
+
+- 사이트: https://survey-route-guide.vercel.app (공용 접속 코드가 필요합니다)
+- 저장소: https://github.com/ghdnfl2033-collab/survey-route-guide
+
 ## 문서
 
 - [PRD.md](PRD.md) — 기획서 (문제 정의, 목표, 기능 범위, 보안·개인정보 검토, 개발 단위)
