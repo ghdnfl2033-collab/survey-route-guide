@@ -1,0 +1,462 @@
+@import "tailwindcss";
+
+/* 어두운 화면 설정은 따르지 않는다: 종이 같은 밝은 바탕이 이 디자인의 기본이다 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --paper: #f5f4ef;
+  --ink: #0f0f0e;
+  --card-dark: #151515;
+  --card-cream: #f9f6f1;
+  --red: #ef5d44;
+  --yellow: #fcdd71;
+  --blue: #9fd5f7;
+  --nav-muted: #62615d;
+  --nav-line: rgba(15, 15, 14, 0.08);
+  --nav-rule: rgba(15, 15, 14, 0.16);
+  --r: 22px;
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --display: var(--font-archivo), var(--font-noto-kr), "Arial Black", Impact, system-ui, sans-serif;
+  --sans: var(--font-inter), var(--font-noto-kr), system-ui, -apple-system, "Segoe UI", "Malgun Gothic", Roboto, Arial, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--sans);
+}
+
+/* 파란색 버튼·안내를 이 디자인의 잉크색(검정)과 종이색으로 바꾼다 */
+@theme {
+  --color-blue-50: #efede6;
+  --color-blue-300: rgba(15, 15, 14, 0.28);
+  --color-blue-600: #0f0f0e;
+  --color-blue-700: #0f0f0e;
+  --color-blue-800: #0f0f0e;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 3px;
+}
+
+/* ── 공통 모양: 버튼은 알약, 입력 칸은 둥글게 ── */
+button.rounded,
+a.rounded {
+  border-radius: 9999px;
+}
+input[type="text"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+input[type="password"] {
+  border-radius: 12px;
+}
+
+/* ── 작업 화면: 흰 헤더 카드 + 둥근 패널 ── */
+.hdr-card {
+  position: relative;
+  z-index: 5;
+  margin: 0 16px;
+  background: #fff;
+  border-radius: 0 0 var(--r) var(--r);
+  box-shadow: 0 0 0 1px var(--nav-line), 0 16px 36px -24px rgba(15, 15, 14, 0.3);
+}
+.brand {
+  font-family: var(--display);
+  font-weight: 900;
+  font-stretch: 85%;
+  font-size: 1.7rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  -webkit-text-stroke: 0.3px currentColor;
+}
+.brand-sub {
+  font-size: 0.65rem;
+  letter-spacing: 0.02em;
+  color: var(--nav-muted);
+}
+.arrow-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: var(--ink);
+  color: #fff;
+}
+.pill-ink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--ink);
+  color: #fff;
+  padding: 0.6rem 1.3rem;
+  font-weight: 700;
+}
+.pill-ink:disabled {
+  opacity: 0.5;
+}
+@media (min-width: 768px) {
+  /* 넓은 화면에서는 페이지 전체가 스크롤되지 않고, 목록·결과 칸만 안에서 스크롤된다 */
+  .print-root {
+    position: relative; /* 화면에 보이지 않게 숨긴 선택 버튼(sr-only)이 바깥으로 삐져나와 스크롤을 만들지 않게 한다 */
+    overflow: hidden;
+    /* clip은 사용자 스크롤뿐 아니라 브라우저의 자동 스크롤(포커스 이동 등)도 막는다.
+       hidden만 쓰면 자동 스크롤로 화면이 한 번 밀린 뒤 되돌릴 방법이 없어 위쪽(지도)이 안 보이게 된다 */
+    overflow: clip;
+  }
+}
+.panel-map {
+  margin: 0 16px;
+  overflow: hidden;
+  border-radius: var(--r);
+  box-shadow: 0 0 0 1px var(--nav-line);
+}
+.panel-result {
+  margin: 0 16px;
+  background: #fff;
+  border-radius: var(--r) var(--r) 0 0;
+  box-shadow: 0 0 0 1px var(--nav-line), 0 -16px 36px -28px rgba(15, 15, 14, 0.3);
+}
+aside section > h2,
+.panel-result > h2 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+aside {
+  background: var(--paper);
+  /* 화면에 보이지 않게 숨긴 선택 버튼(sr-only)이 이 칸 안에 머물게 한다 (포커스가 가도 페이지 전체가 밀리지 않는다) */
+  position: relative;
+}
+
+/* ── 로그인 화면: 큰 제목 + 움직이는 색 타일 모자이크 ── */
+.login-stage {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--paper);
+  --col: clamp(104px, 21vw, 205px);
+  --gap: 13px;
+  --pitch: calc(var(--col) * 1.376);
+  --ch: calc(var(--pitch) - var(--gap));
+}
+.login-body {
+  position: relative;
+  display: grid;
+  min-height: 0;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+}
+@media (min-width: 900px) {
+  .login-body {
+    grid-template-columns: minmax(0, 1fr) calc(3 * var(--col) + 2 * var(--gap) + 62px);
+    grid-template-rows: 1fr;
+  }
+}
+.hero-copy {
+  align-self: center;
+  padding: 24px clamp(20px, 6vw, 86px);
+  max-width: 680px;
+}
+.hero-h1 {
+  font-family: var(--display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  font-size: clamp(2.6rem, 8.5vw, 5.6rem);
+  -webkit-text-stroke: 1px currentColor;
+}
+.hero-h1 .ln {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+}
+.hero-h1 .ln > span {
+  display: block;
+  animation: lineRise 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.hero-h1 .ln:nth-child(2) > span {
+  animation-delay: 0.085s;
+}
+.hero-h1 .ln:nth-child(3) > span {
+  animation-delay: 0.17s;
+}
+.hero-p {
+  margin-top: 1.2rem;
+  max-width: 28rem;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  animation: riseIn 0.9s 0.5s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+.hero-acts {
+  margin-top: 1.5rem;
+  max-width: 26rem;
+  animation: riseIn 0.9s 0.62s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+.login-hdr {
+  animation: hdrDrop 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes lineRise {
+  from {
+    transform: translateY(110%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes hdrDrop {
+  from {
+    transform: translateY(calc(-100% - 48px));
+  }
+  to {
+    transform: none;
+  }
+}
+
+.mosaic {
+  position: relative;
+  min-height: 200px;
+  overflow: hidden;
+  margin-right: 62px;
+}
+@media (max-width: 899px) {
+  .mosaic {
+    margin: 0 auto;
+    width: calc(3 * var(--col) + 2 * var(--gap));
+  }
+}
+.mosaic .col {
+  position: absolute;
+  top: 0;
+  width: var(--col);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  animation: colDown 14.6s linear infinite;
+  will-change: transform;
+}
+.mosaic .c1 {
+  left: 0;
+  margin-top: 86px;
+}
+.mosaic .c2 {
+  left: calc(var(--col) + var(--gap));
+  margin-top: -11.5px;
+  animation-name: colUp;
+}
+.mosaic .c3 {
+  left: calc(2 * (var(--col) + var(--gap)));
+  margin-top: 86.5px;
+}
+/* 5칸을 두 번 이어 붙였으므로 절반만 움직이면 처음과 같은 모양이 되어 끊김 없이 이어진다 */
+@keyframes colDown {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, calc(-50% - var(--gap) / 2), 0);
+  }
+}
+@keyframes colUp {
+  from {
+    transform: translate3d(0, calc(-50% - var(--gap) / 2), 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+.cell {
+  position: relative;
+  flex: none;
+  height: var(--ch);
+  border-radius: var(--r);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px;
+  font-family: var(--display);
+  font-weight: 900;
+  line-height: 1;
+}
+.cell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.13;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.cell.red {
+  background: var(--red);
+  color: #fff;
+}
+.cell.yellow {
+  background: var(--yellow);
+}
+.cell.blue {
+  background: var(--blue);
+}
+.cell.cream {
+  background: var(--card-cream);
+  box-shadow: inset 0 0 0 1px #e9e6df;
+}
+.cell.dark {
+  background: var(--card-dark);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+.cell.dark::after {
+  mix-blend-mode: screen;
+  opacity: 0.035;
+}
+.cell .big {
+  font-size: calc(var(--col) * 0.62);
+  letter-spacing: -0.06em;
+}
+.cell .tag {
+  font-size: calc(var(--col) * 0.1);
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-top: 8px;
+  font-family: var(--sans);
+}
+.cell svg {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 34%;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mosaic .col {
+    animation: none;
+  }
+  .hero-h1 .ln > span,
+  .hero-p,
+  .hero-acts,
+  .login-hdr {
+    animation: none;
+  }
+}
+
+/* 인쇄용 화면 (nice): 결과표만 A4 가로 한 장에 담는다. 지도·입력 화면·버튼은 인쇄하지 않는다. */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+  :root {
+    --background: #ffffff;
+    --foreground: #000000;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-root {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .print-area {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    font-size: 9px;
+    line-height: 1.25;
+  }
+  #sec-result {
+    display: none;
+  }
+  .print-area table {
+    min-width: 0 !important;
+    width: 100%;
+    font-size: 9px;
+  }
+  .print-area th,
+  .print-area td {
+    padding: 2px 4px !important;
+    border: 1px solid #555;
+  }
+  /* 동선표: 머리글 음영 + 전체 테두리 (공문서 표 양식) */
+  .print-area table thead th {
+    background: #dfe5f0 !important;
+    color: #000;
+    text-align: center !important;
+    font-weight: 700;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-area thead { display: table-header-group; }
+  /* 쪽 번호 (지원하는 브라우저) */
+  @page {
+    @bottom-center { content: counter(page) " / " counter(pages); font-size: 8px; color: #444; }
+  }
+  .print-area tr {
+    break-inside: avoid;
+  }
+  .print-area input[type="text"] {
+    border: 0 !important;
+    padding: 0 !important;
+    height: 11px;
+    font-size: 9px;
+    line-height: 1;
+    color: #000;
+  }
+  .print-area input[type="checkbox"] {
+    width: 9px;
+    height: 9px;
+    margin: 0;
+    vertical-align: middle;
+  }
+  .print-area p {
+    margin: 0 !important;
+    padding-top: 1px !important;
+    padding-bottom: 1px !important;
+  }
+  .print-area .overflow-x-auto {
+    overflow: visible !important;
+  }
+}
